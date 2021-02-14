@@ -151,7 +151,7 @@ object TrainModel extends Logging {
       scored <- transformer.transform(example)
       scores <- scored.select("probability")
       probabilityRow = scores.collect().head
-      probabilityTensor = probabilityRow.toArray.apply(0).asInstanceOf[Tensor[Double]]
+      probabilityTensor = probabilityRow.getAs[Tensor[Double]](0)
       probabilities = probabilityTensor.toArray
     } yield probabilities
 
