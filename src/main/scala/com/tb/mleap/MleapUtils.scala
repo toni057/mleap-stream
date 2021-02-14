@@ -1,4 +1,4 @@
-package com.tb.data.mleap
+package com.tb.mleap
 
 import com.tb.data.Iris
 import ml.combust.bundle.BundleFile

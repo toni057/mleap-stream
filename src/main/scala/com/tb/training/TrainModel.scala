@@ -1,7 +1,7 @@
-package training
+package com.tb.training
 
 import com.tb.data.Iris
-import com.tb.data.mleap.MleapUtils
+import com.tb.mleap.MleapUtils
 import grizzled.slf4j.Logging
 import ml.combust.bundle.BundleFile
 import ml.combust.mleap.spark.SparkSupport.SparkTransformerOps
