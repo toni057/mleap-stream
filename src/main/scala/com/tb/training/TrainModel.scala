@@ -19,7 +19,7 @@ object TrainModel extends Logging {
 
   /**
    *
-   * @param args , it should have two input parameters specified:
+   * @param args - it should have two input parameters specified:
    *             --input-path
    *             --mleap-path
    */
@@ -30,7 +30,7 @@ object TrainModel extends Logging {
     val argPar = parseInputArgs(args.toList)
     logger.info(argPar)
 
-    implicit val spark = getSparkSession
+    implicit val spark: SparkSession = getSparkSession
 
     val df = argPar
       .get("input-path")
@@ -80,7 +80,7 @@ object TrainModel extends Logging {
     spark.read.json(path)
   }
 
-  def transformLabel(df: DataFrame) = {
+  def transformLabel(df: DataFrame): DataFrame = {
     logger.info("Label transformer.")
     val labelIndexer = new StringIndexer()
       .setInputCol("species")
@@ -107,7 +107,7 @@ object TrainModel extends Logging {
       .setStages(Array(vectorAssembler, standardScaler))
   }
 
-  def buildLogisticRegression(df: DataFrame) = {
+  def buildLogisticRegression: LogisticRegression = {
     logger.info("Building logistic regression.")
     new LogisticRegression()
       .setFeaturesCol("features")
@@ -118,10 +118,10 @@ object TrainModel extends Logging {
       .setElasticNetParam(0.8)
   }
 
-  def buildFinalPipeline(df: DataFrame) = {
+  def buildFinalPipeline(df: DataFrame): Pipeline = {
     logger.info("Building final pipeline.")
     val prePro = buildPreProPipeline(df)
-    val lr = buildLogisticRegression(df)
+    val lr = buildLogisticRegression
 
     new Pipeline()
       .setStages(Array(prePro, lr))
@@ -134,7 +134,7 @@ object TrainModel extends Logging {
     pipeline.fit(df)
   }
 
-  def serializeToMleap(df: DataFrame, pipelineModel: PipelineModel, path: String) = {
+  def serializeToMleap(df: DataFrame, pipelineModel: PipelineModel, path: String): Unit = {
     logger.info(s"Serializing the bundle to ${fullPath(path)}.")
     val sbc = SparkBundleContext().withDataset(pipelineModel.transform(df))
     for (bf <- managed(BundleFile(fullPath(path)))) {
@@ -142,15 +142,15 @@ object TrainModel extends Logging {
     }
   }
 
-  def fullPath(path: String) = s"jar:file:${System.getProperty("user.dir")}/$path"
+  private def fullPath(path: String) = s"jar:file:${System.getProperty("user.dir")}/$path"
 
-  def loadAndScoreExample(path: String) = {
+  def loadAndScoreExample(path: String): Either[Throwable, Array[Double]] = {
     val scores = for {
       example <- Iris.convertIrisToLeapFrame(Iris(0.1, 0.2, 0.3, 0.4))
       transformer = MleapUtils.loadMleapModel(path)
       scored <- transformer.transform(example)
       scores <- scored.select("probability")
-      probabilityRow = scores.collect().apply(0)
+      probabilityRow = scores.collect().head
       probabilityTensor = probabilityRow.toArray.apply(0).asInstanceOf[Tensor[Double]]
       probabilities = probabilityTensor.toArray
     } yield probabilities
