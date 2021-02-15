@@ -16,8 +16,8 @@ object MleapUtils {
     (for (file <- managed(BundleFile(f))) yield {
       file.loadMleapBundle().get.root
     }).tried match {
-      case Success(transformer) => transformer
-      case Failure(_) => throw new RuntimeException("Could not load transformer")
+      case Success(transformer) => Success(transformer)
+      case Failure(_) => Failure(throw new RuntimeException("Could not load transformer"))
     }
   }
 
