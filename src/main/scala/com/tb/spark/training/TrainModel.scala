@@ -1,4 +1,4 @@
-package com.tb.training
+package com.tb.spark.training
 
 import com.tb.data.Iris
 import com.tb.mleap.MleapUtils
@@ -14,14 +14,16 @@ import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.ml.feature.{StandardScaler, StringIndexer, VectorAssembler}
 
+import scala.util.Success
+
 
 object TrainModel extends Logging {
 
   /**
    *
    * @param args - it should have two input parameters specified:
-   *             --input-path
-   *             --mleap-path
+   *             --input-path src/main/resources/iris.json
+   *             --mleap-path src/main/resources/logreg.zip
    */
   def main(args: Array[String]): Unit = {
 
@@ -68,6 +70,7 @@ object TrainModel extends Logging {
       .setAppName("train-job")
       .set("spark.master", "local[2]")
       .set("spark.sql.shuffle.partitions", "1")
+//      .set("spark.driver.extraJavaOptions", "-Dlog4j.configuration=src/main/resources/log4j.properties")
 
     SparkSession
       .builder
@@ -146,13 +149,9 @@ object TrainModel extends Logging {
 
   def loadAndScoreExample(path: String): Either[Throwable, Array[Double]] = {
     val scores = for {
-      example <- Iris.convertIrisToLeapFrame(Iris(0.1, 0.2, 0.3, 0.4))
-      transformer = MleapUtils.loadMleapModel(path)
-      scored <- transformer.transform(example)
-      scores <- scored.select("probability")
-      probabilityRow = scores.collect().head
-      probabilityTensor = probabilityRow.getAs[Tensor[Double]](0)
-      probabilities = probabilityTensor.toArray
+      example <- Success(Iris(0.1, 0.2, 0.3, 0.4))
+      transformer <- MleapUtils.loadMleapModel(path)
+      probabilities <- example.score(transformer)
     } yield probabilities
 
     scores.toEither
